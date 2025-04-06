@@ -9,35 +9,70 @@ DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
 default:
     just --list --unsorted
 
-# Run all fmt and clippy checks
-check:
-    just --check --fmt --unstable
-    cargo +nightly fmt --check
-    cargo clippy -- -D warnings
+# 🔧 Install required CLI tools
+setup:
+    @echo "Installing dependencies..."
+    go install github.com/a-h/templ/cmd/templ@latest
+    go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+    @echo "Optional: install entr for file watching: https://github.com/eradman/entr"
+    @echo "Try: brew install entr  # macOS"
+    @echo "Or:  sudo apt install entr  # Debian/Ubuntu"
 
-# Format all rust code
-fmt:
-    cargo +nightly fmt
+# 📦 Tidy go.mod and fetch dependencies
+deps:
+    @echo "Tidying Go modules..."
+    go mod tidy
 
-# Fix justfile formatting. Warning: will change existing file. Please first use check.
-fix:
-    just --fmt --unstable
-
-# Run all rust builds
+# 🧱 Build binaries
 build:
-    cargo build --all-targets
+    @echo "Building CLI and HTTP binaries..."
+    go build -o bin/cli ./cmd/cli
+    go build -o bin/http ./cmd/http
 
-# Run server
-run:
-    cargo run --bin server --release
+# 🚀 Run the HTTP server
+run-http:
+    @echo "Running HTTP server..."
+    go run ./cmd/http
 
-# Run all tests
+# 🖥️ Run the CLI
+run-cli:
+    @echo "Running CLI..."
+    go run ./cmd/cli
+
+# 🧪 Run tests
 test:
-    cargo test --tests
+    @echo "Running tests..."
+    go test ./...
 
-# Clean all build artifacts
+# 🧹 Format code
+fmt:
+    @echo "Formatting code..."
+    go fmt ./...
+
+# 🔍 Lint with golangci-lint
+lint:
+    @echo "Linting code..."
+    golangci-lint run ./...
+
+# 🧼 Clean build artifacts
 clean:
-    cargo clean
+    @echo "Cleaning up..."
+    rm -rf bin/
+
+# 🛠️ Generate code from .templ files
+generate:
+    @echo "Generating Templ code..."
+    templ generate
+
+# 🔄 Dev mode: generate + run
+dev:
+    just generate
+    just run-http
+
+# 👀 Watch .templ files and regenerate (requires entr)
+watch:
+    @echo "Watching .templ files for changes..."
+    find . -name '*.templ' | entr just generate
 
 # Build linux/amd64 Docker image locally
 docker-build-amd64:
@@ -66,20 +101,3 @@ docker-publish-manifest:
 # Output the BUILD_TAG
 docker-image-tag:
     @echo {{ IMAGE_TAG }}
-
-# Watch for changes and run tests
-watch:
-    cargo watch -x test
-
-docs-install-requirements:
-    python -m pip install --upgrade pip
-    pip3 install -r docs/requirements.txt
-
-docs-build:
-    mdbook build docs
-
-docs-serve:
-    mdbook serve docs
-
-docs-clean:
-    mdbook clean docs
