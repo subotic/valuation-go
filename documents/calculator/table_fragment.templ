@@ -1,0 +1,31 @@
+package calculator
+
+import "github.com/subotic/valuation-go/types"
+
+templ TableFragment(d types.DcfTableView) {
+<table id="fcf_table">
+  <thead>
+    <tr>
+      <th>Year</th>
+      <th>Free Cash Flow (FCF, $M)</th>
+      <th>Discounted Value ($M)</th>
+    </tr>
+  </thead>
+  <tbody>
+    for _, row := range d.Rows {
+       <tr>
+               <td>{ row.Year }</td>
+               <td>{ row.FCF }</td>
+               <td>{ row.Discounted }</td>
+             </tr>
+    }
+
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2"><strong>Total Intrinsic Value ($M)</strong></td>
+      <td><strong>{ d.TotalIntrinsicValue }</strong></td>
+    </tr>
+  </tfoot>
+</table>
+}
